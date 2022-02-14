@@ -9,6 +9,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float walkSpeed = 6.0f;
     [SerializeField] [Range(0.0f, 0.5f)] private float moveSmoothTime = 0.25f;
     [SerializeField] [Range(0.0f, 0.5f)] private float mouseSmoothTime = 0.03f;
+    [SerializeField] private List<Gun> guns;
+
+    private Gun curentGun;
+    private int selectCurentGun = 0;
 
     public float jumpSpeed = 16.0f;
     public float gravity = 20.0f;
@@ -29,7 +33,9 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         characterController = GetComponent<CharacterController>();
-        if(isLockCursor)
+        curentGun = guns[selectCurentGun];
+        WeaponUpdate();
+        if (isLockCursor)
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -39,8 +45,10 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        WeaponSwitching();
         MouseLook();
         Movement();
+        Shooting();
         Jump();
     }
 
@@ -77,7 +85,70 @@ public class PlayerController : MonoBehaviour
         {
             moveDirection.y = jumpSpeed;
         }
+
+        AudioManager.Instance.OnPlayerJumpAudioSource();
         moveDirection.y -= gravity * Time.deltaTime;
         characterController.Move(moveDirection * Time.deltaTime);
+    }
+
+    private void Shooting()
+    {
+        if (Input.GetButton("Fire1"))
+        {
+            curentGun.Shoot();
+        }
+
+        if(Input.GetButtonUp("Fire1"))
+        {
+            curentGun.ResetAnimation();
+        }
+    }
+
+    private void WeaponSwitching()
+    {
+        int previousSelectGun = selectCurentGun;
+
+        if(Input.GetAxis("Mouse ScrollWheel") > 0)
+        {
+            if(selectCurentGun >= guns.Count - 1)
+            {
+                selectCurentGun = 0;
+            }
+            else
+            {
+                selectCurentGun++;
+            }
+        }
+
+        if(Input.GetAxis("Mouse ScrollWheel") < 0)
+        {
+            if(selectCurentGun <= 0)
+            {
+                selectCurentGun = guns.Count - 1;
+            }
+            else
+            {
+                selectCurentGun--;
+            }
+        }
+
+        if(previousSelectGun != selectCurentGun)
+        {
+            curentGun = guns[selectCurentGun];
+            WeaponUpdate();
+        }
+    }
+
+    private void WeaponUpdate()
+    {
+        int i = 0;
+        foreach (var gun in guns)
+        {
+            if(i == selectCurentGun)
+                gun.gameObject.SetActive(true);
+            else
+                gun.gameObject.SetActive(false);
+            i++;
+        }
     }
 }
