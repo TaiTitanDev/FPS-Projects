@@ -50,7 +50,7 @@ public class Enemy : MonoBehaviour
 
     private void Update()
     {
-        if (Vector3.Distance(transform.position, player.transform.position) <= range)
+        if (isBoss || Vector3.Distance(transform.position, player.transform.position) <= range)
         {
             TargetGameObject = player.gameObject;
         }

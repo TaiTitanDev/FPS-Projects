@@ -5782,7 +5782,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 1.5
+  m_Speed: 5
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
@@ -5806,13 +5806,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ddaa71c4014081b4191f3891cdae2fd7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dame: 12
-  health: 100
-  range: 20
+  dame: 50
+  health: 200
+  range: 35
   isBoss: 0
   healthBar: {fileID: 1453110811994994729}
   enemyTargetPrefab: {fileID: 459527979468842036, guid: 1bc891bfb0d83a642a16f6085fdc31fc, type: 3}
-  itemPrefab: {fileID: 3784405536265541817, guid: 72e8a86ad6c8b40408308053e76d5d5f, type: 3}
+  itemPrefabs:
+  - {fileID: 8482945795454013444, guid: bf0f9a21256fdd44aaffba64173e2ca3, type: 3}
+  - {fileID: 3784405536265541817, guid: 72e8a86ad6c8b40408308053e76d5d5f, type: 3}
+  - {fileID: 3437669555387853852, guid: 5e692e10c3d0bcd4ea32ddd193418b10, type: 3}
 --- !u!54 &1453110812347652010
 Rigidbody:
   m_ObjectHideFlags: 0

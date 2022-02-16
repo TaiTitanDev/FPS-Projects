@@ -201,7 +201,7 @@ public class PlayerController : MonoBehaviour
 
     private void Die()
     {
-        isDie = true;
         GamePlayController.Instance.EndGame();
+        isDie = true;
     }
 }

@@ -22,7 +22,7 @@ public class StartGameDialog : MonoBehaviour
     private void OnShowStartGameDialog(Message message)
     {
         animator.Play(ANIM_SHOW);
-        Invoke(nameof(OnClose), 1.25f);
+        Invoke(nameof(OnClose), 3.0f);
     }
 
     private void OnClose()

@@ -11,6 +11,8 @@ public class EndGameDialog : MonoBehaviour
     [SerializeField] private Animator animator;
     [SerializeField] private TMP_Text textTitle;
 
+    private bool isShow = false;
+
     private void OnEnable()
     {
         EventSystem.Instance.Subscribe(SystemEventType.SystemEventShowDialogEndGame, OnShowEndGameDialog);
@@ -21,8 +23,24 @@ public class EndGameDialog : MonoBehaviour
         EventSystem.Instance.Unsubscribe(SystemEventType.SystemEventShowDialogEndGame, OnShowEndGameDialog);
     }
 
+    private void Update()
+    {
+        if (!isShow) return;
+        if (Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            OnGameRestart();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            OnQuitGame();
+        }
+    }
+
     private void OnShowEndGameDialog(Message message)
     {
+        isShow = true;
+
         textTitle.text = (string)message.Data;
         animator.Play(ANIM_SHOW);
     }
