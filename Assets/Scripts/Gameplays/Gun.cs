@@ -3,64 +3,117 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
+public enum GunType
+{
+    None = 0,
+    Rifle = 1,
+    Revolver = 2,
+}
+
 public class Gun : MonoBehaviour
 {
     [SerializeField] private string ANIM_IDLE;
     [SerializeField] private string ANIM_SHOOT;
     [SerializeField] private string ANIM_RELOAD;
 
-    [SerializeField] private float dame = 25.0f;
-    [SerializeField] private float range = 100.0f;
-    [SerializeField] private float fireRate = 10.0f;
+    [SerializeField] private int dame;
+    [SerializeField] private float range;
+    [SerializeField] private float fireRate;
     [SerializeField] private Camera fpsCam;
     [SerializeField] private ParticleSystem fxMuzzelFlash;
     [SerializeField] private GameObject fxBloodSplatter;
-    [SerializeField] private int maxAmmo = 10;
-    [SerializeField] private float reloadTime = 2.0f;
+    [SerializeField] private int maxAmmo;
+    [SerializeField] private int numberOfAmmo;
+    [SerializeField] private float reloadTime;
     [SerializeField] private Animator animator;
     [SerializeField] private TMP_Text textAmmo;
+    [SerializeField] private GunType gunType;
 
     private string curentState;
-    private int curentAmmo = -1;
+    private int curentAmmo = 0;
     private bool isReloading = false;
     private float nextTimeToFire = 0.25f;
 
-    private void Start()
-    {
-        if(curentAmmo == -1)
-        {
-            curentAmmo = maxAmmo;
-        }
-        UpdateTextAmmo();
+    public GunType GunType { get => gunType; private set => gunType = value; }
 
+    private void OnEnable()
+    {
+        OnLoadData();
+        OnCheckReload();
+    }
+
+    private void OnLoadData()
+    {
+        switch (gunType)
+        {
+            case GunType.None:
+                break;
+            case GunType.Rifle:
+                numberOfAmmo = PlayerDataService.Instance.GetPlayerModel().NumberAmmoRifle;
+                UpdateTextAmmo();
+                break;
+            case GunType.Revolver:
+                numberOfAmmo = PlayerDataService.Instance.GetPlayerModel().NumberAmmoRevolver;
+                UpdateTextAmmo();
+                break;
+        }
+    }
+    private void OnUpData()
+    {
+        switch (gunType)
+        {
+            case GunType.None:
+                break;
+            case GunType.Rifle:
+                PlayerDataService.Instance.GetPlayerModel().NumberAmmoRifle = numberOfAmmo;
+                break;
+            case GunType.Revolver:
+                PlayerDataService.Instance.GetPlayerModel().NumberAmmoRevolver = numberOfAmmo;
+                break;
+        }
     }
 
     private IEnumerator Reload()
     {
         Debug.Log("Reloading...");
+
         isReloading = true;
+        AudioManager.Instance.OnReloadAudioSource();
+
         yield return new WaitForSeconds(reloadTime);
-        curentAmmo = maxAmmo;
+
+        if (numberOfAmmo > maxAmmo)
+        {
+            curentAmmo = maxAmmo;
+            numberOfAmmo -= maxAmmo;
+        }
+        else
+        {
+            curentAmmo = numberOfAmmo;
+            numberOfAmmo -= numberOfAmmo;
+        }
+
+        OnUpData();
         UpdateTextAmmo();
         ChangeAnimationState(newState: ANIM_IDLE);
         isReloading = false;
     }
 
+    [System.Obsolete]
     public void Shoot()
     {
         if (isReloading) return;
 
-        if (curentAmmo <= 0)
-        {
-            ChangeAnimationState(newState: ANIM_RELOAD) ;
-            StartCoroutine(Reload());
-            return;
-        }
+        OnCheckReload();
 
         if (Time.time < nextTimeToFire) return;
         nextTimeToFire = Time.time + 1 / fireRate;
 
         // handler shoot actions.
+        if (curentAmmo <= 0)
+            return;
+
+        AudioManager.Instance.OnShootAudioSource();
         ChangeAnimationState(newState: ANIM_SHOOT);
 
         fxMuzzelFlash.Play();
@@ -70,17 +123,34 @@ public class Gun : MonoBehaviour
         {
             Debug.Log(hit.transform.name);
             Enemy enemy = hit.transform.GetComponent<Enemy>();
-            if(enemy != null)
+            if (enemy != null)
             {
                 enemy.TakeDame(dame);
-                Instantiate(fxBloodSplatter, hit.point, Quaternion.LookRotation(hit.normal));
+                GameObject fxBloodSplatterGo = Instantiate(fxBloodSplatter, hit.point, Quaternion.LookRotation(hit.normal));
+                DestroyObject(fxBloodSplatterGo, 1.5f);
             }
 
-            if(hit.rigidbody != null)
+            if (hit.rigidbody != null)
             {
                 hit.rigidbody.AddForce(hit.normal);
             }
         }
+    }
+
+    public void OnCheckReload()
+    {
+        if (curentAmmo <= 0 && numberOfAmmo > 0)
+        {
+            ChangeAnimationState(newState: ANIM_RELOAD);
+            StartCoroutine(Reload());
+            return;
+        }
+    }
+
+    public void SetAmmo(int numberAmmo)
+    {
+        numberOfAmmo = numberAmmo;
+        UpdateTextAmmo();
     }
 
     private void ChangeAnimationState(string newState)
@@ -99,8 +169,20 @@ public class Gun : MonoBehaviour
         ChangeAnimationState(newState: ANIM_IDLE);
     }
 
-    private void UpdateTextAmmo()
+    public void UpdateTextAmmo()
     {
-        textAmmo.text = string.Format("{0}/{1}", curentAmmo, maxAmmo);
+        switch (gunType)
+        {
+            case GunType.None:
+                break;
+            case GunType.Rifle:
+                numberOfAmmo = PlayerDataService.Instance.GetPlayerModel().NumberAmmoRifle;
+                textAmmo.text = string.Format("{0}/{1}", curentAmmo, numberOfAmmo);
+                break;
+            case GunType.Revolver:
+                numberOfAmmo = PlayerDataService.Instance.GetPlayerModel().NumberAmmoRevolver;
+                textAmmo.text = string.Format("{0}/{1}", curentAmmo, numberOfAmmo);
+                break;
+        }
     }
 }

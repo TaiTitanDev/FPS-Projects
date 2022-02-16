@@ -29,11 +29,16 @@ public class PlayerController : MonoBehaviour
     private Vector2 currentMouseDelta = Vector2.zero;
     private Vector2 currentMouseDeltaVelocity = Vector2.zero;
 
+    private PlayerModel playerModel;
+    private bool isDie;
+
     // Start is called before the first frame update
     private void Start()
     {
+        playerModel = PlayerDataService.Instance.GetPlayerModel();
         characterController = GetComponent<CharacterController>();
         curentGun = guns[selectCurentGun];
+        isDie = false;
         WeaponUpdate();
         if (isLockCursor)
         {
@@ -45,6 +50,7 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     private void Update()
     {
+        if (isDie) return;
         WeaponSwitching();
         MouseLook();
         Movement();
@@ -81,12 +87,11 @@ public class PlayerController : MonoBehaviour
 
     void Jump()
     {
-        if (characterController.isGrounded && Input.GetButton("Jump"))
+        if (Input.GetButton("Jump"))
         {
             moveDirection.y = jumpSpeed;
         }
 
-        AudioManager.Instance.OnPlayerJumpAudioSource();
         moveDirection.y -= gravity * Time.deltaTime;
         characterController.Move(moveDirection * Time.deltaTime);
     }
@@ -150,5 +155,53 @@ public class PlayerController : MonoBehaviour
                 gun.gameObject.SetActive(false);
             i++;
         }
+    }
+
+    public void TakeDame(int amount)
+    {
+        SetHeath(-amount);
+        AudioManager.Instance.OnTakeDameAudioSource();
+        EventSystem.Instance.Announce(new Message(SystemEventType.SystemEventUpdateHealth));
+        if (playerModel.Health <= 0)
+        {
+            Die();
+        }
+    }    
+    
+    public void GetCanteen(int amount)
+    {
+        AudioManager.Instance.OnGetCanteenAudioSource();
+        SetHeath(amount);
+        EventSystem.Instance.Announce(new Message(SystemEventType.SystemEventUpdateHealth));
+    }
+
+    private void SetHeath(int amount)
+    {
+        playerModel.Health += amount;
+
+        PlayerDataService.Instance.SetPlayerModel(playerModel);
+    }
+
+    public void GetAmmo(GunType gunType, int amount)
+    {
+        if(gunType == GunType.Rifle)
+        {
+            playerModel.NumberAmmoRifle += amount;
+        }
+
+        if(gunType == GunType.Revolver)
+        {
+            playerModel.NumberAmmoRevolver += amount;
+        }
+
+        AudioManager.Instance.OnGetAmmoAudioSource();
+        PlayerDataService.Instance.SetPlayerModel(playerModel);
+        curentGun.UpdateTextAmmo();
+    }
+
+    private void Die()
+    {
+        isDie = true;
+        GamePlayController.Instance.EndGame();
     }
 }
